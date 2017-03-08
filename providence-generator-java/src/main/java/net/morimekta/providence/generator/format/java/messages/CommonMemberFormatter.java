@@ -30,6 +30,8 @@ import net.morimekta.providence.generator.format.java.utils.JHelper;
 import net.morimekta.providence.generator.format.java.utils.JMessage;
 import net.morimekta.providence.generator.format.java.utils.JUtils;
 import net.morimekta.providence.generator.format.java.utils.ValueBuilder;
+import net.morimekta.providence.reflect.contained.CField;
+import net.morimekta.providence.reflect.util.ThriftAnnotation;
 import net.morimekta.util.Strings;
 import net.morimekta.util.io.IndentedPrintWriter;
 
@@ -257,6 +259,7 @@ public class CommonMemberFormatter implements MessageMemberFormatter {
             }
 
             writer.formatln("out.append(\"%s:\")", field.name());
+            CField cf = (CField) field.getPField();
             switch (field.type()) {
                 case BOOL:
                 case I32:
@@ -276,16 +279,32 @@ public class CommonMemberFormatter implements MessageMemberFormatter {
                                     field.param());
                     break;
                 case STRING:
-                    writer.formatln("   .append('\\\"')")
-                          .formatln("   .append(%s.escape(%s))",
-                                    Strings.class.getName(),
-                                    field.param())
-                          .appendln("   .append('\\\"');");
+                    if (cf.hasAnnotation(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH)) {
+                        if (!cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH).chars().allMatch(Character::isDigit)) {
+                            throw new GeneratorException(String.format("%s must contain a valid number to be the max length! It was '%s'", ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH.name(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH)));
+                        }
+                        writer.formatln("   .append(%s.length() > %s ? ", field.param(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH))
+                              .format(" \"string(startsWith:\\\"\" + %s.escape(%s.substring(0, %s)) + \"\\\"...\" + \", length:\" + %s.length() + \")\" : ", Strings.class.getName(), field.param(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH), field.param())
+                              .format(" \" + %s.escape(%s) + \");", Strings.class.getName(), field.param());
+                    } else {
+                        writer.formatln("   .append('\\\"')")
+                              .formatln("   .append(%s.escape(%s))", Strings.class.getName(), field.param())
+                              .appendln("   .append('\\\"');");
+                    }
                     break;
                 case BINARY:
-                    writer.appendln("   .append(\"b64(\")")
-                          .formatln("   .append(%s.toBase64())", field.param())
-                          .appendln("   .append(')');");
+                    if (cf.hasAnnotation(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH)) {
+                        if (!cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH).chars().allMatch(Character::isDigit)) {
+                            throw new GeneratorException(String.format("%s must contain a valid number to be the max length! It was '%s'", ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH.name(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH)));
+                        }
+                        writer.formatln("   .append(%s.length() > %s ? ", field.param(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH))
+                              .format("\"binary(length:\" + %s.length() + \", hashCode:\" + %s.hashCode() + \")\" : ", field.param(), field.param())
+                              .format("\"b64(\" + %s.toBase64() + \")\");", field.param());
+                    } else {
+                        writer.appendln("   .append(\"b64(\")")
+                              .formatln("   .append(%s.toBase64())", field.param())
+                              .appendln("   .append(')');");
+                    }
                     break;
                 case MESSAGE:
                     writer.formatln("   .append(%s.asString());", field.param());

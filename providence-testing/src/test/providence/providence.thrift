@@ -198,3 +198,29 @@ struct Containers {
     62: optional map<i8,list<i32>> map_i8_list_i32;
 }
 
+struct AnnotationsSutForMaxLength {
+  1: optional binary binaryValueWithAnnotation
+   (java.tostring.maxlength = "8")
+  2: optional binary binaryValue
+  3: optional string stringValueWithAnnotation
+   (java.tostring.maxlength = "8")
+  4: optional string stringValue
+}
+
+union UnionAnnotationsSutForMaxLength {
+  1: optional binary binaryValueWithAnnotation
+   (java.tostring.maxlength = "8")
+  2: optional binary binaryValue
+  3: optional string stringValueWithAnnotation
+   (java.tostring.maxlength = "8")
+  4: optional string stringValue
+}
+
+exception ExceptionAnnotationsSutForMaxLength {
+  1: optional binary binaryValueWithAnnotation
+   (java.tostring.maxlength = "8")
+  2: optional binary binaryValue
+  3: optional string stringValueWithAnnotation
+   (java.tostring.maxlength = "8")
+  4: optional string stringValue
+}

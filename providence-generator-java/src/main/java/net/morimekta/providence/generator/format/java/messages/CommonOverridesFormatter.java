@@ -24,6 +24,8 @@ import net.morimekta.providence.generator.GeneratorException;
 import net.morimekta.providence.generator.format.java.shared.MessageMemberFormatter;
 import net.morimekta.providence.generator.format.java.utils.JField;
 import net.morimekta.providence.generator.format.java.utils.JMessage;
+import net.morimekta.providence.reflect.contained.CField;
+import net.morimekta.providence.reflect.util.ThriftAnnotation;
 import net.morimekta.util.Strings;
 import net.morimekta.util.io.IndentedPrintWriter;
 
@@ -187,6 +189,7 @@ public class CommonOverridesFormatter implements MessageMemberFormatter {
                       .begin()
                       .formatln("out.append(\"%s:\")", field.name());
 
+                CField cf = (CField) field.getPField();
                 switch (field.type()) {
                     case VOID:
                         writer.formatln("   .append(\"true\");");
@@ -209,12 +212,32 @@ public class CommonOverridesFormatter implements MessageMemberFormatter {
                                         field.member());
                         break;
                     case STRING:
-                        writer.formatln("   .append('\\\"').append(%s.escape(%s)).append('\\\"');",
-                                        Strings.class.getName(),
-                                        field.member());
+                        if (cf.hasAnnotation(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH)) {
+                            if (!cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH).chars().allMatch(Character::isDigit)) {
+                                throw new GeneratorException(String.format("%s must contain a valid number to be the max length! It was '%s'", ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH.name(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH)));
+                            }
+                            writer.formatln("   .append(%s.length() > %s ? ", field.member(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH))
+                                  .format(" \"string(startsWith:\\\"\" + %s.escape(%s.substring(0, %s)) + \"\\\"...\" + \", length:\" + %s.length() + \")\" : ", Strings.class.getName(), field.member(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH), field.member())
+                                  .format(" \" + %s.escape(%s) + \");", Strings.class.getName(), field.member());
+                        } else {
+                            writer.formatln("   .append('\\\"')")
+                                  .formatln("   .append(%s.escape(%s))", Strings.class.getName(), field.member())
+                                  .appendln("   .append('\\\"');");
+                        }
                         break;
                     case BINARY:
-                        writer.formatln("   .append(\"b64(\").append(%s.toBase64()).append(')');", field.member());
+                        if (cf.hasAnnotation(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH)) {
+                            if (!cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH).chars().allMatch(Character::isDigit)) {
+                                throw new GeneratorException(String.format("%s must contain a valid number to be the max length! It was '%s'", ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH.name(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH)));
+                            }
+                            writer.formatln("   .append(%s.length() > %s ? ", field.member(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH))
+                                  .format("\"binary(length:\" + %s.length() + \", hashCode:\" + %s.hashCode() + \")\" : ", field.member(), field.member())
+                                  .format("\"b64(\" + %s.toBase64() + \")\");", field.member());
+                        } else {
+                            writer.appendln("   .append(\"b64(\")")
+                                  .formatln("   .append(%s.toBase64())", field.member())
+                                  .appendln("   .append(')');");
+                        }
                         break;
                     case MESSAGE:
                     case ENUM:
@@ -267,6 +290,7 @@ public class CommonOverridesFormatter implements MessageMemberFormatter {
                     }
                 }
 
+                CField cf = (CField) field.getPField();
                 writer.formatln("out.append(\"%s:\")", field.name());
                 switch (field.type()) {
                     case BOOL:
@@ -287,16 +311,33 @@ public class CommonOverridesFormatter implements MessageMemberFormatter {
                                         field.member());
                         break;
                     case STRING:
-                        writer.appendln("   .append('\\\"')")
-                              .formatln("   .append(%s.escape(%s))",
-                                        Strings.class.getName(),
-                                        field.member())
-                              .appendln("   .append('\\\"');");
+                        if (cf.hasAnnotation(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH)) {
+                            if (!cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH).chars().allMatch(Character::isDigit)) {
+                                throw new GeneratorException(String.format("%s must contain a valid number to be the max length! It was '%s'", ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH.name(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH)));
+                            }
+                            writer.formatln("   .append(%s.length() > %s ? ", field.member(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH))
+                                  .format(" \"string(startsWith:\\\"\" + %s.escape(%s.substring(0, %s)) + \"\\\"...\" + \", length:\" + %s.length() + \")\" : ", Strings.class.getName(), field.member(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH), field.member())
+                                  .format(" \" + %s.escape(%s) + \");", Strings.class.getName(), field.member());
+
+                        } else {
+                            writer.formatln("   .append('\\\"')")
+                                  .formatln("   .append(%s.escape(%s))", Strings.class.getName(), field.member())
+                                  .appendln("   .append('\\\"');");
+                        }
                         break;
                     case BINARY:
-                        writer.appendln("   .append(\"b64(\")")
-                              .formatln("   .append(%s.toBase64())", field.member())
-                              .appendln("   .append(')');");
+                        if (cf.hasAnnotation(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH)) {
+                            if (!cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH).chars().allMatch(Character::isDigit)) {
+                                throw new GeneratorException(String.format("%s must contain a valid number to be the max length! It was '%s'", ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH.name(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH)));
+                            }
+                            writer.formatln("   .append(%s.length() > %s ? ", field.member(), cf.getAnnotationValue(ThriftAnnotation.JAVA_TOSTRING_MAXLENGTH))
+                                  .format("\"binary(length:\" + %s.length() + \", hashCode:\" + %s.hashCode() + \")\" : ", field.member(), field.member())
+                                  .format("\"b64(\" + %s.toBase64() + \")\");", field.member());
+                        } else {
+                            writer.appendln("   .append(\"b64(\")")
+                                  .formatln("   .append(%s.toBase64())", field.member())
+                                  .appendln("   .append(')');");
+                        }
                         break;
                     case MESSAGE:
                     case ENUM:

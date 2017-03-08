@@ -75,6 +75,10 @@ generated code. Currently the recognized annotations are:
 * `java.exception.class` Which exception class to inherit from. This must be the
   full class path of an exception. Note that whether it is an exception is not
   checked in the generator, it is plainly trusted as the exception class.
+* `java.tostring.maxlength` Each field in a message (union, struct, exception) can
+ be annotated with this which limits the given field's output when calling
+  `toString()`. Useful if you are forwarding `PMessage` to a logger and don't want
+   to log large fields. Currently only supports `string` and `binary`.
 * `java.service.methods.throws` Which replaces the declared exceptions with the
   given exception class on the **service interface only**. Also note that:
 
