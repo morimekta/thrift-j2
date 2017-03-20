@@ -21,13 +21,16 @@
 package net.morimekta.providence.gentests;
 
 import net.morimekta.providence.serializer.BinarySerializer;
+import net.morimekta.test.providence.AnnotationsSutForMaxLength;
 import net.morimekta.test.providence.AutoIdFields;
 import net.morimekta.test.providence.CompactFields;
 import net.morimekta.test.providence.Containers;
 import net.morimekta.test.providence.DefaultValues;
 import net.morimekta.test.providence.EnumNames;
+import net.morimekta.test.providence.ExceptionAnnotationsSutForMaxLength;
 import net.morimekta.test.providence.OptionalFields;
 import net.morimekta.test.providence.RequiredFields;
+import net.morimekta.test.providence.UnionAnnotationsSutForMaxLength;
 import net.morimekta.test.providence.UnionFields;
 import net.morimekta.test.providence.Value;
 import net.morimekta.util.Binary;
@@ -50,6 +53,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -201,6 +205,61 @@ public class ProvidenceTest {
         assertThat(of.hashCode(), is(equalTo(of2.hashCode())));
         assertThat(of.hashCode(), not(equalTo(rf.hashCode())));
         assertThat(uf.hashCode(), not(equalTo(rf.hashCode())));
+    }
+
+    @Test
+    public void testAnnotation_ToString_MaxLength_Struct() {
+        Binary testData = Binary.copy(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8});
+        AnnotationsSutForMaxLength sut = AnnotationsSutForMaxLength.builder()
+                                                                   .setBinaryValueWithAnnotation(Binary.copy(testData.get()))
+                                                                   .setBinaryValue(Binary.copy(testData.get()))
+                                                                   .setStringValue("123456789")
+                                                                   .setStringValueWithAnnotation("123456789")
+                                                                   .build();
+        assertThat(sut.toString(), is(containsString("binaryValueWithAnnotation:binary(length:9, hashCode:-883926621)")));
+        assertThat(sut.toString(), is(containsString("binaryValue:b64(AAECAwQFBgcI)")));
+        assertThat(sut.toString(), is(containsString("binaryValue:b64(AAECAwQFBgcI)")));
+        assertThat(sut.toString(), is(containsString("stringValueWithAnnotation:string(startsWith:\"12345678\"..., length:9)")));
+        assertThat(sut.toString(), is(containsString("stringValue:\"123456789\"")));
+    }
+
+    @Test
+    public void testAnnotation_ToString_MaxLength_Exception() {
+        Binary testData = Binary.copy(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8});
+        ExceptionAnnotationsSutForMaxLength sut = ExceptionAnnotationsSutForMaxLength.builder()
+                                                                                     .setBinaryValueWithAnnotation(
+                                                                                             Binary.copy(testData.get()))
+                                                                                     .setBinaryValue(Binary.copy(
+                                                                                             testData.get()))
+                                                                                     .setStringValue("123456789")
+                                                                                     .setStringValueWithAnnotation(
+                                                                                             "123456789")
+                                                                                     .build();
+        assertThat(sut.toString(), is(containsString("binaryValueWithAnnotation:binary(length:9, hashCode:-883926621)")));
+        assertThat(sut.toString(), is(containsString("binaryValue:b64(AAECAwQFBgcI)")));
+        assertThat(sut.toString(), is(containsString("binaryValue:b64(AAECAwQFBgcI)")));
+        assertThat(sut.toString(), is(containsString("stringValueWithAnnotation:string(startsWith:\"12345678\"..., length:9)")));
+        assertThat(sut.toString(), is(containsString("stringValue:\"123456789\"")));
+    }
+
+    @Test
+    public void testAnnotation_ToString_MaxLength_Union() {
+        Binary testData = Binary.copy(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8});
+        UnionAnnotationsSutForMaxLength sut = UnionAnnotationsSutForMaxLength
+                .withBinaryValueWithAnnotation(Binary.copy(testData.get()));
+        assertThat(sut.toString(), is(containsString("binaryValueWithAnnotation:binary(length:9, hashCode:-883926621)")));
+
+
+        sut = UnionAnnotationsSutForMaxLength.withBinaryValue(Binary.copy(testData.get()));
+        assertThat(sut.toString(), is(containsString("binaryValue:b64(AAECAwQFBgcI)")));
+
+
+        sut = UnionAnnotationsSutForMaxLength.withStringValue("123456789");
+        assertThat(sut.toString(), is(containsString("stringValue:\"123456789\"")));
+
+
+        sut = UnionAnnotationsSutForMaxLength.withStringValueWithAnnotation("123456789");
+        assertThat(sut.toString(), is(containsString("stringValueWithAnnotation:string(startsWith:\"12345678\"..., length:9)")));
     }
 
     @Test

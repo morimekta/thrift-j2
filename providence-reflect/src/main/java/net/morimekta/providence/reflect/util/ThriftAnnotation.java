@@ -103,6 +103,16 @@ public enum ThriftAnnotation {
      * hazelcast.factory.id = "1"
      */
     JAVA_HAZELCAST_CLASS_ID("hazelcast.class.id"),
+
+    /**
+     * Specify if a field's binary or string inside a struct/union/exception should
+     * limit it's toString length for the given field.
+     * <p>
+     * This is useful if you are forwarding providence models directly to a logger
+     * and is not interested in logging all it's contents.
+     */
+    JAVA_TOSTRING_MAXLENGTH("java.tostring.maxlength"),
+
     ;
 
     public final String tag;
