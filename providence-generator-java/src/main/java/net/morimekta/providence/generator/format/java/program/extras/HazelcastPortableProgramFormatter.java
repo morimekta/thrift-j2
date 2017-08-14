@@ -245,8 +245,8 @@ public class HazelcastPortableProgramFormatter implements BaseProgramFormatter {
                         getHazelcastClassId(message.instanceType()))
               .begin()
               .begin();
+        writer.formatln(".addIntArrayField(\"__fields__\")");
         for (JField field : message.declaredOrderFields()) {
-            writer.formatln(".addBooleanField(\"%s\")", field.hasName());
             appendTypeField(field);
         }
         writer.appendln(".build();")
@@ -286,7 +286,7 @@ public class HazelcastPortableProgramFormatter implements BaseProgramFormatter {
                 writer.formatln(".addUTFField(\"%s\")", field.name());
                 break;
             case LIST:
-                if ( field.isUnion() ) {
+                if ( field.requiresBinarySerialization() ) {
                     writer.formatln(".addByteArrayField(\"%s\")", field.name());
                 } else {
                     final PList pList = field.toPList();
@@ -294,7 +294,7 @@ public class HazelcastPortableProgramFormatter implements BaseProgramFormatter {
                 }
                 break;
             case SET:
-                if ( field.isUnion() ) {
+                if ( field.requiresBinarySerialization() ) {
                     writer.formatln(".addByteArrayField(\"%s\")", field.name());
                 } else {
                     final PSet pSet = field.toPSet();
@@ -302,7 +302,7 @@ public class HazelcastPortableProgramFormatter implements BaseProgramFormatter {
                 }
                 break;
             case MESSAGE:
-                if ( field.isUnion() ) {
+                if ( field.requiresBinarySerialization() ) {
                     writer.formatln(".addByteArrayField(\"%s\")", field.name());
                 } else {
                     writer.formatln(".addPortableField(\"%s\", %s())",

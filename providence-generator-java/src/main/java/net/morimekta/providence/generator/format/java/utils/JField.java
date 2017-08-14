@@ -20,17 +20,17 @@
  */
 package net.morimekta.providence.generator.format.java.utils;
 
-import net.morimekta.providence.PMessageVariant;
 import net.morimekta.providence.PType;
 import net.morimekta.providence.descriptor.PDescriptor;
 import net.morimekta.providence.descriptor.PList;
 import net.morimekta.providence.descriptor.PMap;
-import net.morimekta.providence.descriptor.PMessageDescriptor;
 import net.morimekta.providence.descriptor.PPrimitive;
 import net.morimekta.providence.descriptor.PRequirement;
 import net.morimekta.providence.descriptor.PSet;
 import net.morimekta.providence.generator.GeneratorException;
 import net.morimekta.providence.reflect.contained.CField;
+import net.morimekta.providence.reflect.contained.CMessageDescriptor;
+import net.morimekta.providence.util.ThriftAnnotation;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -378,22 +378,26 @@ public class JField {
                 .getDescriptor());
     }
 
-    public boolean isUnion() {
-        boolean result = false;
+    /**
+     * @return True if the field should be serialized with it's binary serialized representation, not it's
+     *         portable field type. This is the case for non-portable messages, sets and lists of
+     *         non-portable messages and all maps.
+     */
+    public boolean requiresBinarySerialization() {
         switch ( type() ) {
             case MESSAGE:
-                result = ((PMessageDescriptor)field().getDescriptor()).getVariant().equals(PMessageVariant.UNION);
-                break;
+                return !((CMessageDescriptor)field().getDescriptor()).hasAnnotation(ThriftAnnotation.JAVA_HAZELCAST_CLASS_ID);
+            case MAP:
+                return true;
             case SET:
             case LIST:
                 PDescriptor descriptor = extractItemDescriptor(field().getDescriptor());
                 if( descriptor.getType().equals(PType.MESSAGE) ) {
-                    result = ((PMessageDescriptor)descriptor).getVariant().equals(PMessageVariant.UNION);
+                    return !((CMessageDescriptor)descriptor).hasAnnotation(ThriftAnnotation.JAVA_HAZELCAST_CLASS_ID);
                 }
                 break;
         }
-        return result;
-
+        return false;
     }
 
     private PDescriptor extractItemDescriptor(PDescriptor descriptor) {

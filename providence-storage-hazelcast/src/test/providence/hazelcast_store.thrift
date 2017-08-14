@@ -1,6 +1,6 @@
-namespace java net.morimekta.test.hazelcast
+namespace java net.morimekta.test.providence.storage.hazelcast
 
-const i32 FACTORY_ID = 1;
+const i32 FACTORY_ID = 1234;
 
 enum Value {
    FIRST = 1,
@@ -25,19 +25,13 @@ enum Value {
    NINTEENTH = 6765,
    TWENTIETH = 10946
 }
-
 struct CompactFields {
     1: required string name
     2: required i32 id,
     3: optional string label;
-} (compact = "",
+} (json.compact = "",
    hazelcast.class.id = "1",
    java.public.constructor = "")
-
-const list<CompactFields> kDefaultCompactFields = [
-  {"name": "Tut-Ankh-Amon", "id": 1333, "label": "dead"},
-  {"name": "Ramses II", "id": 1279}
-];
 
 struct OptionalFields {
     1: optional bool booleanValue;
