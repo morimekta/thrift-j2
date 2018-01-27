@@ -33,6 +33,8 @@ struct Service {
     2: optional ServicePort http;
     3: optional ServicePort admin;
     4: optional Database db;
+    6: optional bool enabled;
+    7: optional i64 valid_until;
 }
 
 struct RefConfig1 {
