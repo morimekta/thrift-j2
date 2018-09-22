@@ -21,6 +21,8 @@
 package net.morimekta.providence.config;
 
 import net.morimekta.providence.PMessage;
+import net.morimekta.providence.config.impl.IntermediateConfigParser;
+import net.morimekta.providence.config.impl.IntermediateConfigSupplier;
 import net.morimekta.providence.config.impl.ProvidenceConfigParser;
 import net.morimekta.providence.config.impl.ProvidenceConfigSupplier;
 import net.morimekta.providence.descriptor.PField;
@@ -30,7 +32,6 @@ import net.morimekta.util.FileWatcher;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Map;
@@ -78,6 +79,7 @@ public class ProvidenceConfig implements ConfigResolver {
         this.loaded = new ConcurrentHashMap<>();
         this.watcher = watcher;
         this.parser = new ProvidenceConfigParser(registry, strict);
+        this.intermediate = new IntermediateConfigParser(registry, strict);
         this.clock = clock;
     }
 
@@ -97,8 +99,12 @@ public class ProvidenceConfig implements ConfigResolver {
                 return (ConfigSupplier<M, F>) loaded.get(path);
             }
         }
-        ProvidenceConfigSupplier<M, F> supplier = new ProvidenceConfigSupplier<>(
-                configFile, parentConfig, watcher, parser, clock);
+        ConfigSupplier<M, F> supplier;
+        if (configFile.getName().toLowerCase().endsWith(".json")) {
+            supplier = new IntermediateConfigSupplier<>(configFile, parentConfig, watcher, intermediate, clock);
+        } else {
+            supplier = new ProvidenceConfigSupplier<>(configFile, parentConfig, watcher, parser, clock);
+        }
         if (parentConfig == null) {
             loaded.put(path, supplier);
         }
@@ -141,6 +147,7 @@ public class ProvidenceConfig implements ConfigResolver {
 
     private final Map<String, ConfigSupplier> loaded;
     private final ProvidenceConfigParser      parser;
+    private final IntermediateConfigParser    intermediate;
     private final FileWatcher                 watcher;
     private final Clock                       clock;
 }
